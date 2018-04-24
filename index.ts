@@ -4,6 +4,27 @@ import { Argv, Arguments } from "yargs";
 import * as fs from "fs";
 import * as openpgp from "openpgp";
 
+function readPublicKeys(publicKey: string): openpgp.key.Key[] {
+    const pubkey = fs.readFileSync(publicKey, { encoding: "utf8" });
+    const result = openpgp.key.readArmored(pubkey.trim());
+    if (result.err) {
+        process.stderr.write(`unable to find key in ${publicKey}\n`);
+        result.err.forEach(err => console.error(err));
+        process.exit(1);
+    }
+    return result.keys;
+}
+
+function assertFileExists(filename: string) {
+    try {
+        fs.accessSync(filename, fs.constants.R_OK);
+        return true;
+    } catch (e) {
+        throw (new Error(`Can't read ${filename}`))
+    }
+}
+
+
 class Encrypt {
     command = "encrypt";
     describe = "encrypt stdin using the public key file";
@@ -23,14 +44,8 @@ class Encrypt {
             .boolean('show-version')
 
     async handler(args: Arguments) {
-        const pubkey = fs.readFileSync(args.publicKey, { encoding: 'utf8' });
         const plaintext = fs.readFileSync(0);
-        const result = openpgp.key.readArmored(pubkey);
-        if (result.err) {
-            process.stderr.write(`unable to find key in ${args.publicKey}\n`);
-            result.err.forEach(err => console.error(err));
-            process.exit(1);
-        }
+        const keys = readPublicKeys(args.publicKey);
 
         openpgp.config.show_version = args.showVersion;
         openpgp.config.show_comment = args.showComment;
@@ -38,20 +53,43 @@ class Encrypt {
             openpgp.config.commentstring = args.comment;
             openpgp.config.show_comment = true;
         }
-        let { data: ciphertext } = await openpgp.encrypt({ publicKeys: result.keys, data: plaintext });
+        let { data: ciphertext } = await openpgp.encrypt({ publicKeys: keys, data: plaintext });
         if (typeof ciphertext !== "undefined")
             process.stdout.write(ciphertext);
     };
 }
 
-function assertFileExists(filename: string) {
-    try {
-        fs.accessSync(filename, fs.constants.R_OK);
-        return true;
-    } catch (e) {
-        throw (new Error(`Can't read ${filename}`))
+async function getInfo(key: openpgp.key.Key) {
+    return {
+        expirationTime: await key.getExpirationTime(),
+        userIds: key.getUserIds(),
+        isPrivate: key.isPrivate()
     }
 }
 
-const argv = yargs.command(new Encrypt).help().argv;
-console.log(argv._.length)
+class Info {
+    command = "info"
+    describe = "display information about a key"
+
+    builder = (yargs: Argv) =>
+        yargs.option('public-key',
+            {
+                alias: ["k"],
+                describe: 'a file that contains armored keys used for encryption'
+            })
+            .demandOption('public-key');
+
+    async handler(args: Arguments) {
+        const keys = readPublicKeys(args.publicKey);
+        const info = await Promise.all(keys.map(getInfo));
+        process.stdout.write(JSON.stringify(info));
+    }
+}
+
+const argv = yargs
+    .command(new Encrypt)
+    .command(new Info)
+    .help()
+    .recommendCommands()
+    .demandCommand(1, 'You need to specify a command')
+    .argv;

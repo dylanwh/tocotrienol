@@ -1,6 +1,6 @@
 {
   "name": "tocotrienol",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "a usable command line openpgp program",
   "main": "index.js",
   "types": "index.d.ts",
@@ -19,8 +19,9 @@
   "author": "Dylan Hardison <dylan@hardison.net>",
   "license": "GPL3",
   "devDependencies": {
-    "typescript": "^2.5.3",
+    "@types/core-js": "^0.9.46",
     "@types/node": "^9.6.6",
-    "@types/yargs": "^11.0.0"
+    "@types/yargs": "^11.0.0",
+    "typescript": "^2.5.3"
   }
 }
