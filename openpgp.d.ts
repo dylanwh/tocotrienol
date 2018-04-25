@@ -4,10 +4,27 @@ declare module 'openpgp' {
         var show_comment: boolean;
         var show_version: boolean;
     }
+    class Keyid {
+        bytes: string;
+        read(bytes: Uint8Array): Keyid;
+        write(): Uint16Array;
+        toHex(): string;
+    }
     class SessionKey { data: Uint8Array; algorithm: String }
     namespace packet {
         class Signature {
             isExpired(date: Date): boolean;
+        }
+        class PublicKey {
+            created: Date;
+            read(bytes: Uint8Array): PublicKey;
+            write(): Uint8Array;
+            getKeyId(): Keyid;
+            getFingerprint(): string;
+            getAlgorithmInfo(): { algorithm: string, bits: number };
+
+        }
+        class PublicSubkey extends PublicKey {
         }
     }
     class Message { }
@@ -17,20 +34,25 @@ declare module 'openpgp' {
             err?: Array<Error>
         };
         class User { }
-
         class Key {
             getExpirationTime(): Promise<Date>
             getPrimaryUser(date?: Date): { user: key.User, selfCertification: packet.Signature };
             getUserIds(): Array<string>;
             isPrivate(): boolean;
+            primaryKey: packet.PublicKey;
+            subKeys: Array<SubKey>
+        }
+
+        class SubKey {
+            subKey: packet.PublicSubkey;
         }
     }
 
-    interface EncryptArgs {
-        data: String | Uint8Array,
+    function encrypt(args: {
+        data: string | Uint8Array,
         publicKeys?: key.Key | Array<key.Key>,
         privateKeys?: key.Key | Array<key.Key>,
-        passwords?: String | Array<String>,
+        passwords?: string | Array<string>,
         sessionKey?: SessionKey,
         filename?: string,
         compression?: any,
@@ -40,8 +62,7 @@ declare module 'openpgp' {
         returnSessionKey?: boolean,
         wildcard?: boolean,
         date?: Date
-    }
-    function encrypt(args: EncryptArgs): Promise<{
+    }): Promise<{
         data?: string,
         message?: Message,
         signature?: packet.Signature

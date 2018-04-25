@@ -59,17 +59,34 @@ class Encrypt {
     };
 }
 
-async function getInfo(key: openpgp.key.Key) {
+
+interface InspectResult {
+    expirationTime: Date,
+    userIds: string[],
+    isPrivate: boolean,
+    primaryKey: KeyInfo,
+    subKeys?: KeyInfo[],
+}
+
+interface KeyInfo {
+    readonly created: Date;
+    readonly fingerprint: string;
+    readonly keyId: string;
+    readonly algorithmInfo: { algorithm: string, bits: number };
+}
+
+function KeyInfo(pubkey: openpgp.packet.PublicKey): KeyInfo {
     return {
-        expirationTime: await key.getExpirationTime(),
-        userIds: key.getUserIds(),
-        isPrivate: key.isPrivate()
+        created: pubkey.created,
+        fingerprint : pubkey.getFingerprint(),
+        keyId : pubkey.getKeyId().toHex(),
+        algorithmInfo : pubkey.getAlgorithmInfo(),
     }
 }
 
-class Info {
-    command = "info"
-    describe = "display information about a key"
+class Inspect {
+    command = "inspect"
+    describe = "view json representation of a key file"
 
     builder = (yargs: Argv) =>
         yargs.option('public-key',
@@ -77,18 +94,31 @@ class Info {
                 alias: ["k"],
                 describe: 'a file that contains armored keys used for encryption'
             })
+            .option('with-sub-keys', { describe: "include sub keys" })
+            .boolean('with-sub-keys')
             .demandOption('public-key');
 
     async handler(args: Arguments) {
         const keys = readPublicKeys(args.publicKey);
-        const info = await Promise.all(keys.map(getInfo));
-        process.stdout.write(JSON.stringify(info));
+        const getInfo = async (key: openpgp.key.Key) => {
+            let result: InspectResult = {
+                expirationTime: await key.getExpirationTime(),
+                userIds: key.getUserIds(),
+                isPrivate: key.isPrivate(),
+                primaryKey: KeyInfo(key.primaryKey),
+            };
+            if (args.withSubKeys)
+                result.subKeys = key.subKeys.map(k => KeyInfo(k.subKey));
+
+            return result;
+        };
+        process.stdout.write(JSON.stringify(await Promise.all(keys.map(getInfo)), null, 2));
     }
 }
 
 const argv = yargs
     .command(new Encrypt)
-    .command(new Info)
+    .command(new Inspect)
     .help()
     .recommendCommands()
     .demandCommand(1, 'You need to specify a command')
