@@ -1,6 +1,6 @@
 {
   "name": "tocotrienol",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "a usable command line openpgp program",
   "main": "index.js",
   "types": "index.d.ts",

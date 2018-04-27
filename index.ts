@@ -24,7 +24,6 @@ function assertFileExists(filename: string) {
     }
 }
 
-
 class Encrypt {
     command = "encrypt";
     describe = "encrypt stdin using the public key file";
@@ -44,21 +43,24 @@ class Encrypt {
             .boolean('show-version')
 
     async handler(args: Arguments) {
-        const plaintext = fs.readFileSync(0);
-        const keys = readPublicKeys(args.publicKey);
+        try {
+            const plaintext = fs.readFileSync(0);
+            const keys = readPublicKeys(args.publicKey);
 
-        openpgp.config.show_version = args.showVersion;
-        openpgp.config.show_comment = args.showComment;
-        if (args.comment) {
-            openpgp.config.commentstring = args.comment;
-            openpgp.config.show_comment = true;
+            openpgp.config.show_version = args.showVersion;
+            openpgp.config.show_comment = args.showComment;
+            if (args.comment) {
+                openpgp.config.commentstring = args.comment;
+                openpgp.config.show_comment = true;
+            }
+            let { data: ciphertext } = await openpgp.encrypt({ publicKeys: keys, data: plaintext });
+            if (typeof ciphertext !== "undefined")
+                process.stdout.write(ciphertext);
+        } catch (e) {
+            process.exit(2);
         }
-        let { data: ciphertext } = await openpgp.encrypt({ publicKeys: keys, data: plaintext });
-        if (typeof ciphertext !== "undefined")
-            process.stdout.write(ciphertext);
     };
 }
-
 
 interface InspectResult {
     expirationTime: Date,
@@ -84,6 +86,31 @@ function KeyInfo(pubkey: openpgp.packet.PublicKey): KeyInfo {
     }
 }
 
+class Check {
+    command = "check";
+    describe = "check a keyfile is valid and not expired";
+
+    builder = (yargs: Argv) =>
+        yargs.option('public-key',
+            {
+                alias: ["k"],
+                describe: 'a file that contains armored keys used for encryption'
+            })
+            .demandOption('public-key');
+
+    async handler(args: Arguments) {
+        try {
+            const keys = readPublicKeys(args.publicKey);
+            const expirationTimes = await Promise.all(keys.map(async key => await key.getExpirationTime()));
+            const now = new Date;
+            const ok = expirationTimes.every(time => time > now);
+            process.exit(ok ? 0 : 1);
+        } catch (e) {
+            process.exit(2);
+        }
+    }
+}
+
 class Inspect {
     command = "inspect"
     describe = "view json representation of a key file"
@@ -94,9 +121,9 @@ class Inspect {
                 alias: ["k"],
                 describe: 'a file that contains armored keys used for encryption'
             })
+            .demandOption('public-key')
             .option('with-sub-keys', { describe: "include sub keys" })
-            .boolean('with-sub-keys')
-            .demandOption('public-key');
+            .boolean('with-sub-keys');
 
     async handler(args: Arguments) {
         const keys = readPublicKeys(args.publicKey);
@@ -119,6 +146,7 @@ class Inspect {
 const argv = yargs
     .command(new Encrypt)
     .command(new Inspect)
+    .command(new Check)
     .help()
     .recommendCommands()
     .demandCommand(1, 'You need to specify a command')
