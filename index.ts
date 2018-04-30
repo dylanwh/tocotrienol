@@ -71,10 +71,10 @@ interface InspectResult {
 }
 
 interface KeyInfo {
-    readonly created: Date;
-    readonly fingerprint: string;
-    readonly keyId: string;
-    readonly algorithmInfo: { algorithm: string, bits: number };
+    created: Date;
+    fingerprint: string;
+    keyId: string;
+    algorithmInfo: { algorithm: string, bits: number };
 }
 
 function KeyInfo(pubkey: openpgp.packet.PublicKey): KeyInfo {
