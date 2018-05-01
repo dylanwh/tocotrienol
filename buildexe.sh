@@ -1,6 +1,6 @@
 # Run with `npm run buildexe`
 
-TCTNODEVERSION=x64-8.10.0
+TCTNODEVERSION=x64-8.11.1
 echo "\033[0;36mBuilding tocotrienol with Node $TCTNODEVERSION\033[0m\n";
 
 # Compile index.ts to index.js
