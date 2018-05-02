@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "buildexe": "./build.sh",
+    "buildexe": "./buildexe.sh",
     "webpack": "webpack --config webpack.config.js"
   },
   "dependencies": {
