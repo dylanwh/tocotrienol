@@ -9,7 +9,9 @@
     "tct": "index.js"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "buildexe": "./build.sh",
+    "webpack": "webpack --config webpack.config.js"
   },
   "dependencies": {
     "argparse": "^1.0.10",
@@ -22,6 +24,9 @@
     "@types/core-js": "^0.9.46",
     "@types/node": "^9.6.6",
     "@types/yargs": "^11.0.0",
-    "typescript": "^2.5.3"
+    "nexe": "^2.0.0-rc.26",
+    "typescript": "^2.5.3",
+    "webpack": "^4.6.0",
+    "webpack-cli": "^2.1.2"
   }
 }
