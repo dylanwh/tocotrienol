@@ -15,7 +15,11 @@
   },
   "dependencies": {
     "argparse": "^1.0.10",
+    "encoding": "^0.1.12",
     "openpgp": "^3.0.7",
+    "spawn-sync": "^1.0.15",
+    "thread-sleep": "^2.0.0",
+    "try-thread-sleep": "^1.0.2",
     "yargs": "^11.0.0"
   },
   "author": "Dylan Hardison <dylan@hardison.net>",

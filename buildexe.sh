@@ -19,4 +19,4 @@ webpack --config webpack.config.js;
 
 # Compile the js and node executable into a single executable.
 echo "\033[0;36mBuilding tct executable (first run may take a while)\033[0m\n";
-nexe -t $TCTNODEVERSION -b -p $(which python2) -i dist/tct.js -o dist/tct;
+nexe --verbose -t $TCTNODEVERSION -b -p $(which python2) -i dist/tct.js -o dist/tct;
