@@ -3,13 +3,11 @@ import { Argv, Arguments } from "yargs";
 import * as fs from "fs";
 import * as openpgp from "openpgp";
 
-function readPublicKeys(publicKey: string): openpgp.key.Key[] {
+export function readPublicKeys(publicKey: string): openpgp.key.Key[] {
     const pubkey = fs.readFileSync(publicKey, { encoding: "utf8" });
     const result = openpgp.key.readArmored(pubkey.trim());
     if (result.err) {
-        process.stderr.write(`unable to find key in ${publicKey}\n`);
-        result.err.forEach(err => console.error(err));
-        process.exit(1);
+        throw new Error(result.err.toString());
     }
     return result.keys;
 }
